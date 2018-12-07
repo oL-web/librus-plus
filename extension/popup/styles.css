@@ -1,0 +1,51 @@
+html{
+    background:white;
+    text-align: center;
+    margin:0;
+    padding:0;
+}
+input{
+    border: 2px solid #303b4a;
+    background: #e8f0fe;
+    color: #303b4a;
+    margin: 5px;
+    padding: 10px;
+    transition: 0.2s;
+    display:block;
+}
+input:hover{
+    background: #dee6eb;
+}
+.login-form__submit {
+    outline: none;
+    padding:10px 30px;
+    display:block;
+    border:0;
+    color:white;
+    letter-spacing: 2px;
+    width:100%;
+    background: #975b83;
+    transition: 0.2s;
+}
+.login-form__submit:hover, .login-form__submit:focus{
+    background: #7f4d6e;
+}
+::placeholder {
+    color: #303b4a;
+    opacity: 1;
+}
+.login-details_failed{
+    color:rgb(255, 79, 79);
+}
+.login-details_successful{
+    color:rgb(0, 163, 0);
+}
+.flex{
+    display:flex;
+    align-items: center;
+    margin:5px 0;
+}
+.extension-details{
+    font-size:12px;
+    color: #5d5d5d;
+}
