@@ -1,7 +1,7 @@
 {
   "name": "librus-plus",
-  "version": "1.0.0",
-  "description": "Librus Plus rozszerza funkcjonalność Librusa, dodając szybkie logowanie oraz automatyczne liczenie ile jedynek możesz jeszcze dostać",
+  "version": "1.0.1",
+  "description": "Librus Plus rozszerza funkcjonalność Librusa, dodając szybkie logowanie, liczenie frekwencji oraz automatyczne liczenie ile jedynek możesz jeszcze dostać",
   "scripts": {
     "build": "parcel build extension/content_script_src/index.js --no-source-maps --no-cache --public-url \".\" --out-dir \"extension/content_script_dist\"",
     "dev": "parcel extension/content_script_src/index.js --no-source-maps --no-cache --out-dir \"extension/content_script_dist\""
@@ -26,6 +26,7 @@
     "parcel-bundler": "^1.10.3"
   },
   "dependencies": {
+    "dayjs": "^1.7.8",
     "lodash": "^4.17.11",
     "superagent": "^4.0.0"
   }

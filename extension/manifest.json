@@ -2,11 +2,13 @@
     "name": "Librus Plus",
     "version": "1.0.0",
     "author": "ol-web",
-    "description": "Librus Plus rozszerza funkcjonalność Librusa, dodając szybkie logowanie oraz automatyczne liczenie ile jedynek możesz jeszcze dostać",
+    "description": "Librus Plus rozszerza funkcjonalność Librusa, dodając szybkie logowanie, liczenie frekwencji oraz automatyczne liczenie ile jedynek możesz jeszcze dostać",
     "manifest_version": 2,
     "permissions": ["storage", "*://*.librus.pl/*"],
     "content_scripts": [{
-        "matches": ["https://synergia.librus.pl/przegladaj_oceny/uczen"],
+        "matches": [
+            "https://synergia.librus.pl/przegladaj_oceny/uczen", "https://synergia.librus.pl/przegladaj_nb/uczen"
+        ],
         "js": ["content_script_dist/index.js"]
     }],
     "browser_action": {
