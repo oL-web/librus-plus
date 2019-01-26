@@ -1,3 +1,5 @@
+import { el, mount } from "redom";
+
 import { summarizeGradeRow } from "../dataExtractors";
 import { calculatePossible1s } from "../calculations";
 import { findGradeRows } from "../findInDOM";
@@ -6,7 +8,6 @@ import applyStyles from "../applyStyles";
 export default () => {
   findGradeRows().forEach(gradeRow => {
     const { summedGrades, summedScales } = summarizeGradeRow(gradeRow);
-
     const possible1sScale4 = calculatePossible1s(summedGrades, summedScales, 4);
     const possible1sScale3 = calculatePossible1s(summedGrades, summedScales, 3);
     const possible1sScale2 = calculatePossible1s(summedGrades, summedScales, 2);
@@ -22,20 +23,12 @@ export default () => {
       Pozostanie ci średnia: ${possible1sScale2.gpa}
       
       Ilość jedynek wagi 1 które możesz otrzymać: ${possible1sScale1.possible1s}
-      Pozostanie ci średnia: ${possible1sScale1.gpa}`;
-
-    const titleContent = `
-      <span class="grade-box librus-plus-grade-box">
-          <a class="ocena librus-plus-ocena" href="#" title="${summary}">
-          ${possible1sScale3.possible1s}
-          </a>
-      </span>
+      Pozostanie ci średnia: ${possible1sScale1.gpa}
       `;
 
-    const gradeSpan = document.createElement("span");
-    gradeSpan.innerHTML = titleContent;
-    gradeSpan.onclick = () => alert(summary);
-    gradeRow.appendChild(gradeSpan);
+    const box = el("a.ocena librus-plus-ocena", { href: "#", title: summary }, possible1sScale3.possible1s);
+    const boxWrapper = el("span.grade-box librus-plus-grade-box", box);
+    mount(gradeRow, el("span", { onclick: () => alert(summary) }, boxWrapper));
   });
 
   applyStyles(`

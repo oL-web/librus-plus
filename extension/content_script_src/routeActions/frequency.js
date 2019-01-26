@@ -1,77 +1,124 @@
 import dayjs from "dayjs";
+import { el, mount, setChildren } from "redom";
+
 import { findFrequencyBoxes } from "../findInDOM";
 import { translateFrequencyBox } from "../dataExtractors";
 import { calculateFrequency } from "../calculations";
 import applyStyles from "../applyStyles";
 
-export default () => {
-  const frequencyArr = findFrequencyBoxes().map(box => translateFrequencyBox(box));
-  const timesAbsentBySubject = {};
-  const currentDate = dayjs();
-  const month = currentDate.month() + 1;
-  const year = currentDate.year();
-  let dateToCheck = dayjs()
-    .set("month", 8)
-    .set("day", 1);
-  if (month < 9) dateToCheck = dateToCheck.set("year", year - 1);
-  const schoolDaysPassed = currentDate.diff(dateToCheck, "day") - currentDate.diff(dateToCheck, "week") * 2;
-
-  frequencyArr.forEach(obj => {
-    const type = obj["Rodzaj"];
-    const subject = obj["Lekcja"];
-
-    if (type === "nieobecność" || type === "nieobecność uspr.") {
-      timesAbsentBySubject[subject] = timesAbsentBySubject[subject] + 1 || 1;
-    }
+const getSubjectsArr = frequencyArr => {
+  let obj = {};
+  frequencyArr.forEach(freq => {
+    obj[freq["Lekcja"]] = true;
   });
+  return Object.keys(obj);
+};
 
-  const inputPanel = document.createElement("tr");
-  inputPanel.className = "librus-plus-input-panel";
-  inputPanel.innerHTML = `
-  <h2 class="librus-plus-input-panel__header">Podaj ile danych przedmiotów masz w tygodniu!</h2>
-  <p class="librus-plus-input-panel__disclaimer">Dane są zapamiętane na przyszłość!</p>
-  <p class="librus-plus-input-panel__disclaimer">Wyniki traktować z mocnym przymrużeniem oka, ponieważ ciężko je dokładnie obliczyć nie znając wszystkich dni wolnych itp.</p>
-  `;
+const getFreqClassName = freq => {
+  let className = "librus-plus-subject-box__frequency librus-plus-subject-box__frequency_";
 
-  const addInputHandler = (subject, timesAbsent, textEl) => e => {
-    const lessonsPerWeek = e.target.value;
-    const freq = calculateFrequency(schoolDaysPassed, lessonsPerWeek, timesAbsent);
-    const className = "librus-plus-subject-box__frequency librus-plus-subject-box__frequency_";
+  if (freq >= 85) className += "excellent";
+  else if (freq >= 75) className += "good";
+  else if (freq >= 65) className += "questionable";
+  else className += "bad";
 
-    if (freq >= 85) textEl.className = className + "excellent";
-    else if (freq >= 75) textEl.className = className + "good";
-    else if (freq >= 65) textEl.className = className + "questionable";
-    else textEl.className = className + "bad";
+  return className;
+};
 
-    textEl.textContent = `Frekwencja ${freq}%`;
+export default () => {
+  const frequencyArr = findFrequencyBoxes()
+    .map(translateFrequencyBox)
+    .filter(obj => {
+      const type = obj["Rodzaj"];
+      return type === "nieobecność" || type === "nieobecność uspr.";
+    });
+  const currentDate = dayjs();
+  const currentMonth = currentDate.month() + 1;
+  const currentYear = currentDate.year();
+  let schoolStartDate = dayjs()
+    .set("month", 8)
+    .set("date", 1);
+  window.dayjs = dayjs;
+  if (currentMonth < 9) schoolStartDate = schoolStartDate.set("year", currentYear - 1);
+  const getDaysSince = since => currentDate.diff(since, "day") - currentDate.diff(since, "week") * 2;
+  const schoolDaysPassed = getDaysSince(schoolStartDate);
+  const subjects = getSubjectsArr(frequencyArr);
+  localStorage.secSemesterDate = localStorage.secSemesterDate || "";
+
+  const inputPanel = el("tr.librus-plus-input-panel", [
+    el("h2.librus-plus-input-panel__header", "Podaj ile danych przedmiotów masz w tygodniu!"),
+    el("p.librus-plus-input-panel__disclaimer", "Dane są zapamiętane na przyszłość!"),
+    el(
+      "p.librus-plus-input-panel__disclaimer",
+      "Wyniki traktować z mocnym przymrużeniem oka, ponieważ ciężko je dokładnie obliczyć nie znając wszystkich dni wolnych itp."
+    ),
+    el("div.flex-center", [
+      el("p.librus-plus-input-panel__disclaimer", "Podaj datę rozpoczęcia drugiego semestru:"),
+      el("input.librus-plus-input-panel__date-picker", {
+        type: "date",
+        value: localStorage.secSemesterDate,
+        oninput: e => {
+          localStorage.secSemesterDate = e.target.value;
+          subjectBoxes.forEach(box => box.showFreq());
+        }
+      })
+    ])
+  ]);
+
+  const showFreq = obj => {
+    const { subject, textEl, inputEl, absentLessons } = obj;
+    const lessonsPerWeek = Number(inputEl.value);
+    const timesAbsent = { firstSemester: 0, secondSemester: 0 };
+    const sec = dayjs(localStorage.secSemesterDate);
     localStorage[subject + "perWeek"] = lessonsPerWeek;
+
+    if (sec.isValid() && sec.isBefore(currentDate)) {
+      const daysPassedSinceSec = getDaysSince(sec);
+
+      absentLessons.forEach(lesson => {
+        if (dayjs(lesson["Data"]).isBefore(sec)) timesAbsent.firstSemester += 1;
+        else timesAbsent.secondSemester += 1;
+      });
+
+      const freq1 = calculateFrequency(schoolDaysPassed - daysPassedSinceSec, lessonsPerWeek, timesAbsent.firstSemester);
+      const freq2 = calculateFrequency(daysPassedSinceSec, lessonsPerWeek, timesAbsent.secondSemester);
+
+      setChildren(textEl, [
+        el("div", { className: `${getFreqClassName(freq1)} librus-plus-subject-box__frequency_old` }, `Frekwencja 1: ${freq1}%`),
+        el("div", { className: getFreqClassName(freq2) }, `Frekwencja 2: ${freq2}%`)
+      ]);
+    } else {
+      timesAbsent.firstSemester = absentLessons.length;
+      const freq = calculateFrequency(schoolDaysPassed, lessonsPerWeek, timesAbsent.firstSemester);
+      setChildren(textEl, [el("div", { className: getFreqClassName(freq) }, `Frekwencja 1: ${freq}%`)]);
+    }
   };
 
-  for (const subject in timesAbsentBySubject) {
-    const lastPerWeekValue = localStorage[subject + "perWeek"];
-    const div = document.createElement("div");
-    const label = document.createElement("label");
-    const input = document.createElement("input");
-    const p = document.createElement("p");
+  const subjectBoxes = [];
+  subjects.forEach(subject => {
+    const lastPerWeekValue = localStorage[subject + "perWeek"] || 0;
+    const input = el("input.librus-plus-subject-box__input", {
+      type: "number",
+      id: subject,
+      value: lastPerWeekValue
+    });
+    const textContainer = el("div");
+    const tree = el("div.librus-plus-subject-box", [el("label", subject), input, textContainer]);
+    const subjectBox = {
+      subject,
+      inputEl: input,
+      textEl: textContainer,
+      showFreq: () => showFreq(subjectBox),
+      absentLessons: frequencyArr.filter(obj => obj["Lekcja"] === subject)
+    };
 
-    p.textContent = `↑ Uzupełnij ↑`;
-    input.type = "number";
-    div.className = "librus-plus-subject-box";
-    input.className = "librus-plus-subject-box__input";
-    p.className = "librus-plus-subject-box__frequency";
-    label.textContent = subject;
-    input.id = subject;
-    input.value = lastPerWeekValue;
-    input.addEventListener("input", addInputHandler(subject, timesAbsentBySubject[subject], p));
-    if (lastPerWeekValue) input.dispatchEvent(new Event("input"));
+    input.addEventListener("input", subjectBox.showFreq);
+    subjectBox.showFreq();
+    subjectBoxes.push(subjectBox);
+    mount(inputPanel, tree);
+  });
 
-    div.appendChild(label);
-    div.appendChild(input);
-    div.appendChild(p);
-    inputPanel.appendChild(div);
-  }
-
-  document.querySelector(".filters.decorated.center.small > tbody").appendChild(inputPanel);
+  mount(document.querySelector(".filters.decorated.center.small > tbody"), inputPanel);
 
   applyStyles(`
     .librus-plus-input-panel {
@@ -88,18 +135,31 @@ export default () => {
     }
     .librus-plus-input-panel__header{
       font-size: 28px;
-      margin: 0;
+      margin: 0 !important;
     }
     .librus-plus-input-panel__disclaimer{
       text-align: center;
       font-size: 12px;
     }
+    .flex-center{
+      width: 100%;
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 2px solid gold;
+      margin-bottom: 10px;
+    }
+    .librus-plus-input-panel__date-picker{
+      padding: 10px;
+      border: 2px solid black;
+      margin-bottom: 10px;
+    }
     .librus-plus-subject-box{
-      flex-basis: 25%;
+      margin: 5px;
       padding: 5px;
+      flex-basis: calc(25% - 20px);
       flex-direction: column;
       background: #404040;
-      margin: 5px;
     }
     .librus-plus-subject-box__input {
       display: block;
@@ -111,8 +171,9 @@ export default () => {
       font-size: 16px;
     }
     .librus-plus-subject-box__frequency {
-      text-align: center;
       text-shadow: 0 0 2px black;
+      padding: 5px;
+      margin:5px;
     }
     .librus-plus-subject-box__frequency_excellent {
       background: #009000;
@@ -125,6 +186,9 @@ export default () => {
     }
     .librus-plus-subject-box__frequency_bad {
       background: #b70800;
+    }
+    .librus-plus-subject-box__frequency_old{
+      opacity: 0.3;
     }
   `);
 };

@@ -1,5 +1,3 @@
-export default styles => {
-  const styleNode = document.createElement("style");
-  styleNode.innerHTML = styles;
-  document.head.appendChild(styleNode);
-};
+import { el, mount } from "redom";
+
+export default styles => mount(document.head, el("style", styles));

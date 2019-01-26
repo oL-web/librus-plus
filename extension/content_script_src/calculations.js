@@ -24,5 +24,5 @@ export const calculateFrequency = (schoolDaysPassed, lessonsPerWeek, timesAbsent
   const frequency = ((lessonsPassed - timesAbsent) / lessonsPassed) * 100;
   const roundedFrequency = Math.round(Math.max(Math.min(frequency, 100), 0));
 
-  return roundedFrequency;
+  return roundedFrequency || 0;
 };
