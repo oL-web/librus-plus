@@ -38,7 +38,6 @@ export default () => {
   let schoolStartDate = dayjs()
     .set("month", 8)
     .set("date", 1);
-  window.dayjs = dayjs;
   if (currentMonth < 9) schoolStartDate = schoolStartDate.set("year", currentYear - 1);
   const getDaysSince = since => currentDate.diff(since, "day") - currentDate.diff(since, "week") * 2;
   const schoolDaysPassed = getDaysSince(schoolStartDate);
