@@ -1,10 +1,8 @@
 import dayjs from "dayjs";
 import { el, mount, setChildren } from "redom";
-
 import { findFrequencyBoxes } from "../findInDOM";
 import { translateFrequencyBox } from "../dataExtractors";
 import { calculateFrequency } from "../calculations";
-import applyStyles from "../applyStyles";
 
 const getSubjectsArr = frequencyArr => {
   let obj = {};
@@ -44,25 +42,27 @@ export default () => {
   const subjects = getSubjectsArr(frequencyArr);
   localStorage.secSemesterDate = localStorage.secSemesterDate || "";
 
-  const inputPanel = el("tr.librus-plus-input-panel", [
-    el("h2.librus-plus-input-panel__header", "Podaj ile danych przedmiotów masz w tygodniu!"),
-    el("p.librus-plus-input-panel__disclaimer", "Dane są zapamiętane na przyszłość!"),
-    el(
-      "p.librus-plus-input-panel__disclaimer",
-      "Wyniki traktować z mocnym przymrużeniem oka, ponieważ ciężko je dokładnie obliczyć nie znając wszystkich dni wolnych itp."
-    ),
-    el("div.flex-center", [
-      el("p.librus-plus-input-panel__disclaimer", "Podaj datę rozpoczęcia drugiego semestru:"),
-      el("input.librus-plus-input-panel__date-picker", {
-        type: "date",
-        value: localStorage.secSemesterDate,
-        oninput: e => {
-          localStorage.secSemesterDate = e.target.value;
-          subjectBoxes.forEach(box => box.showFreq());
-        }
-      })
-    ])
-  ]);
+  const inputPanel = (
+    <tr className="librus-plus-input-panel">
+      <h2 className="librus-plus-input-panel__header">Podaj ile danych przedmiotów masz w tygodniu!</h2>
+      <p className="librus-plus-input-panel__disclaimer">Dane są zapamiętane na przyszłość!</p>
+      <p className="librus-plus-input-panel__disclaimer">
+        Wyniki traktować z mocnym przymrużeniem oka, ponieważ ciężko je dokładnie obliczyć nie znając wszystkich dni wolnych itp.
+      </p>
+      <div className="flex-center">
+        <p className="librus-plus-input-panel__disclaimer">Podaj datę rozpoczęcia drugiego semestru:</p>
+        <input
+          className="librus-plus-input-panel__date-picker"
+          type="date"
+          value={localStorage.secSemesterDate}
+          oninput={e => {
+            localStorage.secSemesterDate = e.target.value;
+            subjectBoxes.forEach(box => box.showFreq());
+          }}
+        />
+      </div>
+    </tr>
+  );
 
   const showFreq = obj => {
     const { subject, textEl, inputEl, absentLessons } = obj;
@@ -83,26 +83,27 @@ export default () => {
       const freq2 = calculateFrequency(daysPassedSinceSec, lessonsPerWeek, timesAbsent.secondSemester);
 
       setChildren(textEl, [
-        el("div", { className: `${getFreqClassName(freq1)} librus-plus-subject-box__frequency_old` }, `Frekwencja 1: ${freq1}%`),
-        el("div", { className: getFreqClassName(freq2) }, `Frekwencja 2: ${freq2}%`)
+        <div className={getFreqClassName(freq1) + " librus-plus-subject-box__frequency_old"}>Frekwencja 1: {freq1}%</div>,
+        <div className={getFreqClassName(freq2)}>Frekwencja 2: {freq2}%</div>
       ]);
     } else {
       timesAbsent.firstSemester = absentLessons.length;
       const freq = calculateFrequency(schoolDaysPassed, lessonsPerWeek, timesAbsent.firstSemester);
-      setChildren(textEl, [el("div", { className: getFreqClassName(freq) }, `Frekwencja 1: ${freq}%`)]);
+      setChildren(textEl, [<div className={getFreqClassName(freq)}>Frekwencja: {freq}%</div>]);
     }
   };
 
-  const subjectBoxes = [];
-  subjects.forEach(subject => {
+  const subjectBoxes = subjects.map(subject => {
     const lastPerWeekValue = localStorage[subject + "perWeek"] || 0;
-    const input = el("input.librus-plus-subject-box__input", {
-      type: "number",
-      id: subject,
-      value: lastPerWeekValue
-    });
-    const textContainer = el("div");
-    const tree = el("div.librus-plus-subject-box", [el("label", subject), input, textContainer]);
+    const textContainer = <div />;
+    const input = <input type="number" value={lastPerWeekValue} className="librus-plus-subject-box__input" />;
+    const tree = (
+      <div className="librus-plus-subject-box">
+        <label>{subject}</label>
+        {input}
+        {textContainer}
+      </div>
+    );
     const subjectBox = {
       subject,
       inputEl: input,
@@ -113,81 +114,9 @@ export default () => {
 
     input.addEventListener("input", subjectBox.showFreq);
     subjectBox.showFreq();
-    subjectBoxes.push(subjectBox);
     mount(inputPanel, tree);
+    return subjectBox;
   });
 
   mount(document.querySelector(".filters.decorated.center.small > tbody"), inputPanel);
-
-  applyStyles(`
-    .librus-plus-input-panel {
-      text-align: center;
-      padding: 10px;
-      background: #151515;
-      border: 10px solid gold;
-      color: #e4e4e4;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      flex-wrap: wrap;
-      width: 600px;
-    }
-    .librus-plus-input-panel__header{
-      font-size: 28px;
-      margin: 0 !important;
-    }
-    .librus-plus-input-panel__disclaimer{
-      text-align: center;
-      font-size: 12px;
-    }
-    .flex-center{
-      width: 100%;
-      align-items: center;
-      display: flex;
-      flex-direction: column;
-      border-bottom: 2px solid gold;
-      margin-bottom: 10px;
-    }
-    .librus-plus-input-panel__date-picker{
-      padding: 10px;
-      border: 2px solid black;
-      margin-bottom: 10px;
-    }
-    .librus-plus-subject-box{
-      margin: 5px;
-      padding: 5px;
-      flex-basis: calc(25% - 20px);
-      flex-direction: column;
-      background: #404040;
-    }
-    .librus-plus-subject-box__input {
-      display: block;
-      width: 100%;
-      box-sizing: border-box;
-      border: 2px solid black;
-      text-align: center;
-      font-weight: bold;
-      font-size: 16px;
-    }
-    .librus-plus-subject-box__frequency {
-      text-shadow: 0 0 2px black;
-      padding: 5px;
-      margin:5px;
-    }
-    .librus-plus-subject-box__frequency_excellent {
-      background: #009000;
-    }
-    .librus-plus-subject-box__frequency_good {
-      background: #00655b;
-    }
-    .librus-plus-subject-box__frequency_questionable {
-      background: #ad9000;
-    }
-    .librus-plus-subject-box__frequency_bad {
-      background: #b70800;
-    }
-    .librus-plus-subject-box__frequency_old{
-      opacity: 0.3;
-    }
-  `);
 };

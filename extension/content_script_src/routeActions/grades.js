@@ -1,9 +1,7 @@
 import { el, mount } from "redom";
-
 import { summarizeGradeRow } from "../dataExtractors";
 import { calculatePossible1s } from "../calculations";
 import { findGradeRows } from "../findInDOM";
-import applyStyles from "../applyStyles";
 
 export default () => {
   findGradeRows().forEach(gradeRow => {
@@ -12,7 +10,6 @@ export default () => {
     const possible1sScale3 = calculatePossible1s(summedGrades, summedScales, 3);
     const possible1sScale2 = calculatePossible1s(summedGrades, summedScales, 2);
     const possible1sScale1 = calculatePossible1s(summedGrades, summedScales, 1);
-
     const summary = `Ilość jedynek wagi 4 które możesz otrzymać: ${possible1sScale4.possible1s}
       Pozostanie ci średnia: ${possible1sScale4.gpa}
       
@@ -23,25 +20,20 @@ export default () => {
       Pozostanie ci średnia: ${possible1sScale2.gpa}
       
       Ilość jedynek wagi 1 które możesz otrzymać: ${possible1sScale1.possible1s}
-      Pozostanie ci średnia: ${possible1sScale1.gpa}
-      `;
+      Pozostanie ci średnia: ${possible1sScale1.gpa}`;
 
-    const box = el("a.ocena librus-plus-ocena", { href: "#", title: summary }, possible1sScale3.possible1s);
-    const boxWrapper = el("span.grade-box librus-plus-grade-box", box);
-    mount(gradeRow, el("span", { onclick: () => alert(summary) }, boxWrapper));
+    const box = (
+      <span onclick={() => alert(summary)}>
+        <span className="grade-box librus-plus-grade-box">
+          <a className="ocena librus-plus-ocena" href="#" title={summary}>
+            {possible1sScale3.possible1s}
+          </a>
+        </span>
+      </span>
+    );
+
+    mount(gradeRow, box);
   });
-
-  applyStyles(`
-    .librus-plus-grade-box {
-        background-color: black;
-        color: white;
-        border: 8px solid gold;
-    }
-    .librus-plus-ocena {
-        color: white !important;
-        font-weight: bold;
-    }
-  `);
 };
 
 /*

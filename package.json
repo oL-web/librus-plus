@@ -1,6 +1,6 @@
 {
   "name": "librus-plus",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Librus Plus rozszerza funkcjonalność Librusa, dodając szybkie logowanie, liczenie frekwencji oraz automatyczne liczenie ile jedynek możesz jeszcze dostać",
   "scripts": {
     "build": "parcel build extension/content_script_src/index.js --no-source-maps --no-cache --public-url \".\" --out-dir \"extension/content_script_dist\"",
@@ -19,10 +19,11 @@
     "extension"
   ],
   "devDependencies": {
-    "babel-core": "^6.26.3",
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.2.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-plugin-transform-redom-jsx": "^2.0.0",
     "babel-preset-env": "^1.7.0",
-    "babel-preset-stage-2": "^6.24.1",
-    "babel-preset-stage-3": "^6.24.1",
     "parcel-bundler": "^1.10.3"
   },
   "dependencies": {

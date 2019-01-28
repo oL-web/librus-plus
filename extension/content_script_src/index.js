@@ -1,3 +1,4 @@
+import "./styles.css";
 import gradesRouteAction from "./routeActions/grades";
 import frequencyRouteAction from "./routeActions/frequency";
 
